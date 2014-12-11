@@ -8,12 +8,19 @@ In the assignment, you are supposed to parse a fictional programming language th
 The language has 8 keywords:
 
 `FORW d` moves Leonardo d steps forward.
+
 `BACK d` moves Leonardo d steps backwards.
+
 `LEFT Θ` turns Leonardo Θ degrees to the left.
+
 `RIGHT Θ` turns Leonardo Θ degrees to the right.
+
 `UP` lifts the pen up if it is down.
+
 `DOWN` lowers the pen if it is up.
+
 `COLOR #rrggbb` sets the color of the pen using standard RGB formatting. e.g. #FF0000 would make the pen red.
+
 `REP r "cmds"` repeats the commands contained within the quotes r times. Quotes are optional if you want to repeat a single statement.
 
 All commands must be followed by a ., except for REP. All commands are case insensitive. Leonardo starts at position (0,0) facing (1,0).
