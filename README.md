@@ -17,3 +17,6 @@ The language has 8 keywords:
 `REP r "cmds"` repeats the commands contained within the quotes r times. Quotes are optional if you want to repeat a single statement.
 
 All commands must be followed by a ., except for REP. All commands are case insensitive. Leonardo starts at position (0,0) facing (1,0).
+
+##Notice to would-be cheaters
+I don't know if this assignment will be reused for next years' class, but if it is I would heavily recommend against copying this code. Since this code has been submitted to Kattis you will in all likelihood get caught for plagiarizing and punished accordingly.
