@@ -1,3 +1,4 @@
+import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -24,7 +25,12 @@ public class Lexer {
 		StringBuilder buf = new StringBuilder();
 		char input[] = new char[1024];
 		int read = 0;
-		while ((read = stdin.read(input)) != -1) {
+	/*	while ((read = stdin.read(input)) != -1) {
+			buf.append(input, 0, read);
+		}*/
+		BufferedReader std = new BufferedReader(stdin);
+		while(std.ready()) {
+			read = std.read(input);
 			buf.append(input, 0, read);
 		}
 		return buf.toString();
@@ -73,9 +79,9 @@ public class Lexer {
 				m.find();
 				tokens.add(new Token(currentLine, TokenType.HASH, m.group()));
 			} else if (m.group().equals("\n")) {
-				currentLine++;
 				tokens.add(new Token(currentLine, TokenType.LF));
 				tokens.add(new Token(currentLine, TokenType.WHITESPACE));
+				currentLine++;
 			} else if (m.group().matches("\\%\\s*.*\n")) {
 				//tokens.add(new Token(currentLine, TokenType.PERCENT));
 				//tokens.add(new Token(currentLine, TokenType.LF));
@@ -95,9 +101,9 @@ public class Lexer {
 		
 		// Debug-kod för att skriva ut token-sekvensen
 	/*	for (Token token: tokens)
-		   System.out.println(token.getType()); 
-	*/
-		
+		   System.out.println(token.getType().toString() + token.getLine()); 
+	
+	*/	
 		ArrayList<Token> tlist = new ArrayList<Token>();
 		for (int i = 0; i < tokens.size(); i++) {
 			Token token = tokens.get(i);
@@ -105,6 +111,7 @@ public class Lexer {
 				tlist.add(token);
 		}
 		tokens.removeAll(tlist);
+		tlist = new ArrayList<Token>();
 		for (int i = 1; i < tokens.size(); i++) {
 			Token token = tokens.get(i);
 			if(token.getType() == TokenType.WHITESPACE && tokens.get(i-1).getType() == TokenType.WHITESPACE)

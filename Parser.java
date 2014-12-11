@@ -42,8 +42,7 @@ public class Parser {
 				lexer.nextToken();
 			if(lexer.peekToken().getType() != TokenType.DOT) {
 				throw new SyntaxError(lexer.peekToken().getLine());
-			}
-			else {
+			} else {
 				lexer.nextToken();
 				if(lexer.hasMoreTokens()) {
 					if(lexer.peekToken().getType() == TokenType.WHITESPACE)
@@ -61,8 +60,7 @@ public class Parser {
 				lexer.nextToken();
 			if(lexer.peekToken().getType() != TokenType.DOT) {
 				throw new SyntaxError(lexer.peekToken().getLine());
-			}
-			else {
+			} else {
 				lexer.nextToken();
 				if(lexer.hasMoreTokens()) {
 					if(lexer.peekToken().getType() == TokenType.WHITESPACE)
@@ -157,8 +155,7 @@ public class Parser {
 				return BinTree();
 			else
 				return null;
-		} else {
+		} else
 			throw new SyntaxError(t.getLine());
-		}	
 	}
 }
