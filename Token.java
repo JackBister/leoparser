@@ -1,12 +1,7 @@
-// De olika token-typer vi har i grammatiken
 enum TokenType {
-	FORW, BACK, LEFT, RIGHT, DOWN, UP, COLOR, REP, QUOTE, DOT, HASH, LF, PERCENT, WHITESPACE, Number, Invalid
+	FORW, BACK, LEFT, RIGHT, DOWN, UP, COLOR, REP, QUOTE, DOT, HASH, WHITESPACE, Number, Invalid
 }
 
-// Klass för att representera en token
-// I praktiken vill man nog även spara info om vilken rad/position i
-// indata som varje token kommer ifrån, för att kunna ge bättre
-// felmeddelanden
 class Token {
 	private int line;
 	private TokenType type;

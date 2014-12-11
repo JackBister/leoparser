@@ -8,16 +8,15 @@ public class Main {
 				CmdList result;
 				result = parser.parse();
 				result.process();
+			} else {
+				System.out.println("Empty input file.");
 			}
-		} catch(SilentError e) {
-			System.exit(0);
 		} catch(SyntaxError e) {
-			System.out.println("Syntaxfel på rad " + e.getLine());
-			// DEBUG
+			System.out.println("Syntax error on line: " + e.getLine());
+			//Stack trace which can help figure out where the syntax error was.
 			//e.printStackTrace();
-		} catch(NullPointerException e) {
-			//wtf
-			e.printStackTrace();
+		} catch(Exception e) {
+			System.out.println(e.getMessage());
 		}
 	}
 }

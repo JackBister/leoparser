@@ -8,151 +8,157 @@ public class Parser {
 		this.lexer = lexer;
 	}
 
-	public CmdList parse() throws SilentError, SyntaxError {
-		// Startsymbol är BinTree
-		CmdList result = BinTree();
-		// Borde inte finnas något kvar av indata när vi parsat ett bintree
+	public CmdList parse() throws Exception {
+		CmdList result = ParseCmds();
+		//There shouldn't be any tokens left after the parsing is finished:
 		if (lexer.hasMoreTokens())
 			throw new SyntaxError(lexer.peekToken().getLine());
+		//Result can be null if input consists only of whitespace.
+		if(result == null)
+			throw new Exception("Empty input file.");
 		return result;
 	}
-
-	private CmdList BinTree() throws SilentError, SyntaxError {
-		// Kika på nästa indata-token för att välja produktionsregel
+	
+	/*
+	 * If the next token is whitespace, this method steps past it.
+	 * Otherwise, it does nothing.
+	 */
+	private void chewWhitespace() throws SyntaxError {
+		if(lexer.peekToken().getType() == TokenType.WHITESPACE)
+			lexer.nextToken();
+	}
+	
+	/*
+	 * Checks that a token has the type specified by the parameter t,
+	 * and returns the token.
+	 */
+	private Token mustBe(TokenType t) throws SyntaxError {
+		Token token = lexer.nextToken();
+		if(token.getType() != t)
+			throw new SyntaxError(token.getLine());
+		return token;
+	}
+	
+	/*
+	 * Finalizes the parsing of a token.
+	 * At this point it is known what command and what parameters a token is called with,
+	 * but it is not known whether there is more tokens to parse.
+	 * This code was reused in a lot of places which is why it was broken out here.
+	 */
+	private CmdList finalizeParse(Cmd c) throws SyntaxError {
+		if(lexer.hasMoreTokens()) {
+			chewWhitespace();
+			if(lexer.hasMoreTokens() && lexer.peekToken().getType() != TokenType.QUOTE)
+				return new CmdList(c, ParseCmds());
+			else
+				return new CmdList(c, null);
+		} else
+			return new CmdList(c, null);
+	}
+	
+	/*
+	 * Parses commands of the 'move' class - FORW, BACKW, LEFT and RIGHT.
+	 */
+	private CmdList parseMove() throws SyntaxError {
+		Token t = lexer.nextToken();
+		mustBe(TokenType.WHITESPACE);
+		Token num = mustBe(TokenType.Number);
+		int d = 0;
+		try {
+			d = Integer.parseInt((String)num.getData());
+		} catch (NumberFormatException e) {
+			throw new SyntaxError(num.getLine());
+		}
+		if(d == 0) 
+			throw new SyntaxError(num.getLine());
+		chewWhitespace();
+		Token tmp = lexer.nextToken();
+		if(tmp.getType() != TokenType.DOT) {
+			throw new SyntaxError(tmp.getLine());
+		} else
+			return finalizeParse(new Move(t.getType(), d));
+	}
+	
+	/*
+	 * Parses commands of the "penmove' class - UP and DOWN.
+	 */
+	private CmdList parsePenMove() throws SyntaxError {
+		Token t = lexer.nextToken();
+		chewWhitespace();
+		Token tmp = lexer.nextToken();
+		if(tmp.getType() != TokenType.DOT) {
+			throw new SyntaxError(tmp.getLine());
+		} else
+			return finalizeParse(new PenMove(t.getType()));
+	}
+	
+	/*
+	 * Parses COLOR commands.
+	 */
+	private CmdList parseColor() throws SyntaxError {
+		lexer.nextToken();
+		mustBe(TokenType.WHITESPACE);
+		Token c = mustBe(TokenType.HASH);
+		chewWhitespace();
+		Token tmp = lexer.nextToken();
+		if(tmp.getType() != TokenType.DOT) {
+			throw new SyntaxError(tmp.getLine());
+		} else
+			return finalizeParse(new ParseColor("0x" + (String)c.getData()));
+	}
+	
+	/*
+	 * Parses REP commands.
+	 */
+	private CmdList parseReps() throws SyntaxError {
+		lexer.nextToken();
+		mustBe(TokenType.WHITESPACE);
+		Token r = mustBe(TokenType.Number);
+		int rint = 0;
+		try {
+			rint = Integer.parseInt((String)r.getData());
+		} catch (NumberFormatException e) {
+			throw new SyntaxError(r.getLine());
+		}
+		if(rint == 0) 
+			throw new SyntaxError(r.getLine());
+		mustBe(TokenType.WHITESPACE);
+		if(!lexer.hasMoreTokens())
+			throw new SyntaxError(r.getLine());
+		Token q = lexer.peekToken();
+		if(q.getType() == TokenType.QUOTE) {
+			lexer.nextToken();
+			CmdList cl = ParseCmds();
+			q = lexer.nextToken();
+			if(q.getType() != TokenType.QUOTE) {
+				throw new SyntaxError(q.getLine());
+			}
+			return finalizeParse(new Rep(rint, cl));
+		} else {
+			CmdList cl = ParseCmds();
+			CmdList rcl = new CmdList(cl.pop(), null);
+			return new CmdList(new Rep(rint, rcl), cl);
+		}
+	}
+	
+	/*
+	 * Chooses how to parse the upcoming tokens based on the type of the next token.
+	 */
+	private CmdList ParseCmds() throws SyntaxError {
 		Token t = lexer.peekToken();
 		if (t.getType() == TokenType.FORW || t.getType() == TokenType.BACK
-		 || t.getType() == TokenType.LEFT || t.getType() == TokenType.RIGHT) {
-			lexer.nextToken();
-			Token num = lexer.nextToken(); 
-			if(num.getType() != TokenType.WHITESPACE) {
-				throw new SyntaxError(num.getLine());
-			}
-			num = lexer.nextToken(); 
-			if(num.getType() != TokenType.Number) {
-				throw new SyntaxError(num.getLine());
-			}
-			int d = 0;
-			try {
-				d = Integer.parseInt((String)num.getData());
-			} catch (NumberFormatException e) {
-				throw new SyntaxError(num.getLine());
-			}
-			if(d == 0) throw new SyntaxError(num.getLine());
-			if(lexer.peekToken().getType() == TokenType.WHITESPACE)
-				lexer.nextToken();
-			if(lexer.peekToken().getType() != TokenType.DOT) {
-				throw new SyntaxError(lexer.peekToken().getLine());
-			} else {
-				lexer.nextToken();
-				if(lexer.hasMoreTokens()) {
-					if(lexer.peekToken().getType() == TokenType.WHITESPACE)
-						lexer.nextToken();
-					if(lexer.hasMoreTokens() && lexer.peekToken().getType() != TokenType.QUOTE)
-						return new CmdList(new Move(t.getType(), d), BinTree());
-					else
-						return new CmdList(new Move(t.getType(), d), null);
-				} else
-					return new CmdList(new Move(t.getType(), d), null);
-			}
-		} else if(t.getType() == TokenType.UP || t.getType() == TokenType.DOWN) {
-			lexer.nextToken();
-			if(lexer.peekToken().getType() == TokenType.WHITESPACE)
-				lexer.nextToken();
-			if(lexer.peekToken().getType() != TokenType.DOT) {
-				throw new SyntaxError(lexer.peekToken().getLine());
-			} else {
-				lexer.nextToken();
-				if(lexer.hasMoreTokens()) {
-					if(lexer.peekToken().getType() == TokenType.WHITESPACE)
-						lexer.nextToken();
-					if(lexer.hasMoreTokens() && lexer.peekToken().getType() != TokenType.QUOTE) 
-						return new CmdList(new PenMove(t.getType()), BinTree());
-					else 
-						return new CmdList(new PenMove(t.getType()), null);
-				} else
-					return new CmdList(new PenMove(t.getType()), null);
-			}
-		} else if(t.getType() == TokenType.COLOR) {
-			lexer.nextToken();
-			if(lexer.peekToken().getType() != TokenType.WHITESPACE) {
-				throw new SyntaxError(lexer.peekToken().getLine());
-			}
-			lexer.nextToken();
-			Token c = lexer.nextToken();
-			if(c.getType() != TokenType.HASH) {
-				throw new SyntaxError(c.getLine());
-			}
-	
-			if(lexer.peekToken().getType() == TokenType.WHITESPACE)
-				lexer.nextToken();
-			if(lexer.peekToken().getType() != TokenType.DOT) {
-				throw new SyntaxError(lexer.peekToken().getLine());
-			} else {
-				lexer.nextToken();
-				if(lexer.hasMoreTokens()) {
-					if(lexer.peekToken().getType() == TokenType.WHITESPACE)
-						lexer.nextToken();
-					if(lexer.hasMoreTokens() && lexer.peekToken().getType() != TokenType.QUOTE) 
-						return new CmdList(new ParseColor("0x" + (String)c.getData()), BinTree());
-					else
-						return new CmdList(new ParseColor("0x" + (String)c.getData()), null);
-				} else
-					return new CmdList(new ParseColor("0x" + (String)c.getData()), null);
-			}
-		} else if(t.getType() == TokenType.REP) {
-			lexer.nextToken();
-			if(lexer.peekToken().getType() != TokenType.WHITESPACE) throw new SyntaxError(lexer.peekToken().getLine());
-			lexer.nextToken();
-			Token r = lexer.nextToken();
-			if(r.getType() != TokenType.Number) throw new SyntaxError(r.getLine());
-			int rint = 0;
-			try {
-				rint = Integer.parseInt((String)r.getData());
-			} catch (NumberFormatException e) {
-				throw new SyntaxError(r.getLine());
-			}
-			if(rint == 0) throw new SyntaxError(r.getLine());
-			if(lexer.peekToken().getType() != TokenType.WHITESPACE) 
-				throw new SyntaxError(lexer.peekToken().getLine());
-			lexer.nextToken();
-			if(!lexer.hasMoreTokens())
-				throw new SyntaxError(r.getLine());
-			Token q = lexer.peekToken();
-			if(q.getType() == TokenType.QUOTE) {
-				lexer.nextToken();
-				CmdList cl = BinTree();
-				q = lexer.nextToken();
-				if(q.getType() != TokenType.QUOTE) {
-					throw new SyntaxError(q.getLine());
-				}
-				if(lexer.hasMoreTokens()) {
-					if(lexer.peekToken().getType() == TokenType.WHITESPACE)
-						lexer.nextToken();
-					if(lexer.hasMoreTokens() && lexer.peekToken().getType() != TokenType.QUOTE) 
-						return new CmdList(new Rep(rint, cl), BinTree());
-					else 
-						return new CmdList(new Rep(rint, cl), null);
-				} else
-					return new CmdList(new Rep(rint, cl), null);
-			} else {
-				CmdList cl = BinTree();
-				CmdList rcl = new CmdList(cl.pop(), null);
-				return new CmdList(new Rep(rint, rcl), cl);
-			}
-		} else if (t.getType() == TokenType.PERCENT) {
-			//Stegar fram tills vi kommer till en ny rad
-			while(lexer.peekToken().getType() != TokenType.LF) 
-				lexer.nextToken();
-			//"Äter upp" LF
+		 || t.getType() == TokenType.LEFT || t.getType() == TokenType.RIGHT)
+			return parseMove();
+		else if(t.getType() == TokenType.UP || t.getType() == TokenType.DOWN)
+			return parsePenMove();
+		else if(t.getType() == TokenType.COLOR)
+			return parseColor();
+		else if(t.getType() == TokenType.REP)
+			return parseReps();
+		else if (t.getType() == TokenType.WHITESPACE) {
 			lexer.nextToken();
 			if (lexer.hasMoreTokens())
-				return BinTree();
-			else
-				return null;
-		} else if (t.getType() == TokenType.LF || t.getType() == TokenType.WHITESPACE) {
-			lexer.nextToken();
-			if (lexer.hasMoreTokens())
-				return BinTree();
+				return ParseCmds();
 			else
 				return null;
 		} else
