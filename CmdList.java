@@ -2,7 +2,7 @@ abstract class Cmd {
 	abstract public void process();
 }
 
-class CmdList {
+public class CmdList {
 	CmdList cl;
 	Cmd c;
 	
